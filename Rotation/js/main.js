@@ -64,6 +64,7 @@ function player_object(arena){
 
 // define arena object
 function arena_object(canvas){
+	this.theta = 0
 	this.OMEGA = new vector([0,0,.0])
 	this.perspectiveomega = 0
 	this.canvas = canvas
@@ -77,6 +78,8 @@ function arena_object(canvas){
 	this.render = function(){
 		this.ctx.translate(this.w/2, this.h/2);
 		this.ctx.rotate(  this.perspectiveomega)
+		this.theta += this.perspectiveomega
+		// console.log(this.theta)
 		this.ctx.translate(-this.w/2, -this.h/2);
 
 		this.ctx.beginPath();
@@ -100,8 +103,8 @@ function ball_object(arena,player){
 
 	
 	this.pos = new vector([player.radius*Math.cos(player.theta),player.radius*Math.sin(player.theta),0])
-	this.pos = new vector([0,0,0])
-	this.vel = new vector([-5,0,0])
+	this.pos = new vector([300,0,0])
+	this.vel = new vector([0,2,0])
 	this.hist = []
 	
 	this.render = function(){
@@ -131,10 +134,20 @@ function ball_object(arena,player){
 		
 		this.pos=this.pos.add(this.vel)
 		if (document.getElementById("showpath").checked ) {
-		this.hist.push(this.pos)
+
+			state = [this.pos,arena.theta]
+		this.hist.push([...state])
+		console.log(this.hist[1])
 		for (var i = this.hist.length - 1; i >= 0; i--) {
-			pos = this.hist[i]
-			if (this.hist.length>400) {this.hist.shift()}
+			pos = this.hist[i][0]
+			theta = -this.hist[i][1]+arena.theta
+			// console.log(theta)
+			x = pos.dot(new vector([Math.cos(theta),-Math.sin(theta),0]))
+			y = pos.dot(new vector([Math.sin(theta),Math.cos(theta),0]))
+			z = pos.dot(new vector([0,0,1]))
+			pos = new vector([x,y,z])
+
+			if (this.hist.length>1000) {this.hist.shift()}
 
 			
 		
@@ -173,7 +186,9 @@ canvas.height = h
 
 arena = new arena_object(canvas)
 test = new player_object(arena)
-ball = new ball_object(arena,test)
+ball1 = new ball_object(arena,test)
+ball2 = new ball_object(arena,test)
+ball2.vel = new vector([1,0,0])
 // A single step of the animation
 function renderStep()
 {
@@ -182,12 +197,13 @@ function renderStep()
   
   arena.render()
   test.render()
-  ball.render()
+  ball1.render()
+  ball2.render()
 
   // z = document.getElementById("Object").value
   // arena.OMEGA = new vector([0,0,z])
   
-  refrenceRotation = document.getElementById("Refrence").value
+  refrenceRotation = parseFloat(document.getElementById("Refrence").value)
   arena.perspectiveomega = refrenceRotation
   
   
