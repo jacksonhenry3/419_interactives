@@ -72,6 +72,7 @@ function ball_object(arena){
 	this.vel = new vector([0,0])
 	this.hist = []
 	this.render_radius = .02
+	this.color_rgb_list = [255,255,255]
 
 	this.collision_check = function()
 	{
@@ -96,10 +97,11 @@ function ball_object(arena){
 	
 	this.render = function()
 	{
-		arena.circle(this.pos,this.render_radius,color = "rgb(255,255,255)")
+		
+		var color = "hsl("+this.color_rgb_list[0]+",40%,40%)"
 
 		arena.ctx.beginPath();
-		arena.ctx.strokeStyle = "rgba(255,255,255,.4)";
+		arena.ctx.strokeStyle = color;
 		arena.ctx.lineWidth = 2*this.render_radius*arena.scale;
 		arena.ctx.lineWidth = 2*this.render_radius*arena.scale*.1;
 		arena.ctx.lineJoin = "round";
@@ -110,7 +112,12 @@ function ball_object(arena){
 
 			// arena.circle(pos,this.render_radius/10,color = "rgba(255,255,255,.5)")
 		}
+
+
 		arena.ctx.stroke();
+
+		var color = "hsl("+this.color_rgb_list[0]+",70%,70%)"
+		arena.circle(this.pos,this.render_radius,color = color)
 	}
 }
 
@@ -175,7 +182,7 @@ function registerMouseEvents() {
     	ball.pos = snap(ball.pos,mouse_down_pos,new vector([0,-.5]))
     	ball.pos = snap(ball.pos,mouse_down_pos,new vector([.5,0]))
     	ball.pos = snap(ball.pos,mouse_down_pos,new vector([-.5,0]))
-	    
+	    ball.color_rgb_list = [Math.floor(Math.random()*360),Math.floor(Math.random()*255),Math.floor(Math.random()*255)]
 	    balls.push(ball)
 	    ball.render()
 
