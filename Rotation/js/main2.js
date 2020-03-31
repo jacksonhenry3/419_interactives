@@ -129,23 +129,30 @@ function renderStep()
   // Clears the canvas for new visuals
   arena.ctx.clearRect(0, 0, arena.canvas.width, arena.canvas.height);
   
+  // update the arena position
   arena.update()
 
+  // render the arena
   arena.render()
 
+  // for each ball update its position and then render
   for (var i = balls.length - 1; i >= 0; i--) {
   	ball = balls[i]
   	ball.update()
   	ball.render()
   }
   
+  //check if the user has modified the rotation speed
   refrenceRotation = parseFloat(document.getElementById("Refrence").value)
   arena.perspective_omega = refrenceRotation
   
+  // if the user pauses dont call the next frame
   if (!document.getElementById("showpath").checked ) {
   window.requestAnimationFrame(renderStep);
 	}
 }
+
+// start the loop
 window.requestAnimationFrame(renderStep);
 
 
@@ -160,7 +167,7 @@ function registerMouseEvents() {
     // console.log(mouse_down_pos.magnitude)
     if (mouse_down_pos.magnitude()<arena.indicator_radius) 
     {
-    	console.log(mouse_down_pos)
+    	// console.log(mouse_down_pos)
     	ball = new ball_object(arena)
     	ball.pos = mouse_down_pos
     	ball.pos = snap(ball.pos,mouse_down_pos,zeroVector(2))
@@ -172,7 +179,8 @@ function registerMouseEvents() {
 	    balls.push(ball)
 	    ball.render()
 
-	    $( "#game_world" ).mouseup(function( event ) {
+	    $( "#game_world" ).on("touchend mouseup",function( event ) {
+	    	event.preventDefault() 
 
 			mouse = new vector([event.pageX,event.offsetY])
 			mouse = mouse.subtract(arena.center)
@@ -180,12 +188,16 @@ function registerMouseEvents() {
 			mouse_up_pos = new vector([mouse.x,-mouse.y])
 
 			vel  = mouse_down_pos.subtract(mouse_up_pos).scale(.25)
-			if (vel.norm().x<.1) {vel = new vector([0,vel.y])}
-			if (vel.norm().y<.1) {vel = new vector([vel.x,0])}
+			console.log(vel)
+			if (Math.abs(vel.norm().x)<.1) {vel = new vector([0,vel.y])}
+			if (Math.abs(vel.norm().y)<.1) {vel = new vector([vel.x,0])}
+			console.log(vel)
 			ball.vel = vel
 
 	    
 	});
+
+
 	}
   });
 }
@@ -198,16 +210,18 @@ registerMouseEvents()
 
 })
 
+
+// change this so it doesn't need mouse pos only old pos
 function snap(old_pos,mouse_pos,location) {
 
 	if (mouse_pos.subtract(location).magnitude()<.15)
 	{
-		console.log(mouse_pos.subtract(location).magnitude()<.15)
+		// console.log(mouse_pos.subtract(location).magnitude()<.15)
 		return(location)
 	}
 	else
 	{
-		console.log(old_pos)
+		// console.log(old_pos)
 		return(old_pos)
 	}
 
