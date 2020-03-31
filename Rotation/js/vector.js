@@ -83,6 +83,14 @@ function vector (vals) {
 		}
 		return this;
 	};
+
+	this.rotate = function(theta)
+	{
+		// only accepts two vectors
+		x = this.dot(new vector([Math.cos(theta),-Math.sin(theta)]))
+		y = this.dot(new vector([Math.sin(theta),Math.cos(theta)]))
+		return(new vector([x,y]))
+	}
 }
 
 function randomVector(dim)
