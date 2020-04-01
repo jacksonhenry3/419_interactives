@@ -208,6 +208,7 @@ var launchVector = function(){};
 function registerMouseEvents() {
 	var ball;
   
+  if (! touch) {
    		$( "#game_world" ).mousemove(function( event ) {
 
    			 if (mousedown) 
@@ -228,7 +229,7 @@ function registerMouseEvents() {
    			{
    				launchVector = function(){}
    			}
-   		});
+   		});}
    
   $( "#game_world" ).mousedown(function( event ) {
     mouse = new vector([event.pageX,event.offsetY])
@@ -253,6 +254,9 @@ function registerMouseEvents() {
 	    mousedown = true
 	    
 
+	    if (touch) {ball.vel = new vector([0,.1])}
+
+	    if (! touch) {
 	    $( "#game_world" ).on("touchend mouseup",function( event ) {
 	    	mousedown = false
 	    	event.preventDefault() 
@@ -270,7 +274,7 @@ function registerMouseEvents() {
 			ball.vel = vel
 
 	    
-	});
+	});}
 
 
 	}
@@ -289,6 +293,11 @@ $("#Clear").click(function() {
 $("#stopOnColide").click(function() {
 	balls = []
 	arena.ctx.clearRect(0, 0, arena.canvas.width, arena.canvas.height);
+});
+
+var touch = false;
+window.addEventListener('touchstart', function() {
+  touch = true
 });
 
 registerMouseEvents()
