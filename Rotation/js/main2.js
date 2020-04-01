@@ -208,10 +208,12 @@ var launchVector = function(){};
 function registerMouseEvents() {
 	var ball;
   
-  if (! touch) {
+  
    		$( "#game_world" ).mousemove(function( event ) {
 
-   			 if (mousedown) 
+   			 if (! touch) {
+
+                        if (mousedown) 
    			{
 
 	   			mouse = new vector([event.pageX,event.offsetY])
@@ -229,7 +231,9 @@ function registerMouseEvents() {
    			{
    				launchVector = function(){}
    			}
-   		});}
+                        }
+
+   		});
    
   $( "#game_world" ).mousedown(function( event ) {
     mouse = new vector([event.pageX,event.offsetY])
