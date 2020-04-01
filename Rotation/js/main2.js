@@ -35,6 +35,19 @@ function arena_object(canvas){
 		this.ctx.fill();
 	}
 
+	this.path = function(points,width = .01, color = "rgb(255,255,255)")
+	{
+		this.ctx.beginPath();
+		this.ctx.strokeStyle = color;
+		this.ctx.lineWidth = width*this.scale;
+		this.ctx.lineJoin = "round";
+		for (var i = points.length - 1; i >= 0; i--) {
+			point = points[i]
+			this.ctx.lineTo(point.x*this.scale+this.center.x,this.center.y-point.y*this.scale);
+		}
+		this.ctx.stroke();
+	}
+
 	this.getcoords = function(vec)
 	{
 		return(new vector([this.center.x+vec.x*this.scale,this.center.y-vec.y*this.scale]))
@@ -73,7 +86,8 @@ function ball_object(arena){
 	this.vel = new vector([0,0])
 	this.hist = []
 	this.render_radius = .02
-	this.color_rgb_list = [255,255,255]
+	this.hue = 0
+	this.color = function(s,b){"hsl("+this.hue+","+s+"%,"+b+"%)"}
 
 	this.collision_check = function()
 	{
@@ -83,6 +97,9 @@ function ball_object(arena){
 			vr = this.vel.project(this.pos.norm()).scale(-1)
 			vt = this.vel.project(new vector([-this.pos.y,this.pos.x])).scale(1)
 			this.vel = vr.add(vt)
+
+			if (document.getElementById("pauseoncolide").checked) {document.getElementById("pause").checked = true}
+			
 		}
 	}
 
@@ -93,53 +110,35 @@ function ball_object(arena){
 		this.vel = this.vel.rotate(-arena.perspective_omega*arena.dt)
 		this.pos = this.pos.add(this.vel.scale(arena.dt))
 		this.hist.push([...[this.pos,arena.theta,arena.t]])
-		while (this.hist.length>1000/balls.length) {this.hist.shift()}
+		while (this.hist.length>2000/balls.length) {this.hist.shift()}
 	}
 	
 	this.render = function()
 	{
 		
-		var color = "hsl("+this.color_rgb_list[0]+",40%,40%)"
+		
 
 
 		if (document.getElementById("show_true_path").checked ) {
-
-			arena.ctx.beginPath();
-			arena.ctx.strokeStyle = color;
-			arena.ctx.lineWidth = 2*this.render_radius*arena.scale*.1;
-			arena.ctx.lineJoin = "round";
+			var color = "hsl("+this.color_rgb_list[0]+",40%,40%)"
+			true_tail = []
 			for (var i = this.hist.length - 1; i >= 0; i--) {
-				rec_omega = this.hist[i][1]
-
-
-				pos = this.hist[i][0].rotate(rec_omega-arena.theta)
-				arena.ctx.lineWidth = 0;
-				arena.ctx.lineTo(pos.x*arena.scale+arena.center.x,arena.center.y-pos.y*arena.scale);
-
-				// arena.circle(pos,this.render_radius/10,color = "rgba(255,255,255,.5)")
+				ref_theta = this.hist[i][1]
+				true_tail.push(this.hist[i][0].rotate(ref_theta-arena.theta))
 			}
-
-			
-			arena.ctx.stroke();
+			arena.path(true_tail,width = .0025,color = color)
 		}
 
 		if (document.getElementById("show_aparant_path").checked ) {
-			arena.ctx.beginPath();
-			var color = "hsl("+this.color_rgb_list[0]+",40%,60%)"
-			arena.ctx.strokeStyle = color;
+			var color = "hsl("+this.color_rgb_list[0]+",60%,60%)"
+			aparant_tail = []
 			for (var i = this.hist.length - 1; i >= 0; i--) {
-				rec_omega = this.hist[i][1]
-
-				pos = this.hist[i][0].rotate(rec_omega-arena.theta)
+				ref_theta = this.hist[i][1]
+				pos = this.hist[i][0].rotate(ref_theta-arena.theta)
 				pos = pos.rotate(-arena.perspective_omega*(this.hist[i][2]-arena.t))
-				arena.ctx.lineWidth = 0;
-				arena.ctx.lineTo(pos.x*arena.scale+arena.center.x,arena.center.y-pos.y*arena.scale);
-
-				// arena.circle(pos,this.render_radius/10,color = "rgba(255,255,255,.5)")
+				aparant_tail.push(pos)
 			}
-
-
-			arena.ctx.stroke();
+			arena.path(aparant_tail,width = .0025,color = color)
 		}
 
 		var color = "hsl("+this.color_rgb_list[0]+",70%,70%)"
@@ -159,11 +158,14 @@ balls = []
 
 function renderStep()
 {
+
+
   // Clears the canvas for new visuals
   arena.ctx.clearRect(0, 0, arena.canvas.width, arena.canvas.height);
   
+  
 
-  if (!document.getElementById("showpath").checked ) {
+  if (!document.getElementById("pause").checked ) {
   // update the arena position
   arena.update()
   }
@@ -174,17 +176,22 @@ function renderStep()
   // for each ball update its position and then render
   for (var i = balls.length - 1; i >= 0; i--) {
   	ball = balls[i]
-  	if (!document.getElementById("showpath").checked ) {
-  	ball.update()
-  }
+
+  	if (!document.getElementById("pause").checked )
+  	{
+  		ball.update()
+    }
+
   	ball.render()
   }
   
+  launchVector()
   //check if the user has modified the rotation speed
   refrenceRotation = parseFloat(document.getElementById("Refrence").value)
   arena.perspective_omega = refrenceRotation
   
-  // if the user pauses dont call the next frame
+  
+
   
   window.requestAnimationFrame(renderStep);
 
@@ -194,9 +201,35 @@ function renderStep()
 window.requestAnimationFrame(renderStep);
 
 
+var mousedown = false
+var mouse_down_pos;
+var launchVector = function(){};
 
 function registerMouseEvents() {
 	var ball;
+  
+   		$( "#game_world" ).mousemove(function( event ) {
+
+   			 if (mousedown) 
+   			{
+
+	   			mouse = new vector([event.pageX,event.offsetY])
+	    		mouse = mouse.subtract(arena.center)
+	    		mouse = mouse.scale(1/arena.scale)
+	    		mouse = new vector([mouse.x,-mouse.y])
+	    		diff = mouse_down_pos.subtract(mouse).norm()
+	    		perp = new vector([-diff.y,diff.x]).norm().scale(.03)
+	    		p1 = mouse_down_pos.subtract(diff.scale(.1)).add(perp).add(diff.scale(.05))
+	    		p2 = mouse_down_pos.subtract(diff.scale(.1)).add(perp.scale(-1)).add(diff.scale(.05))
+	    		launchVector = function(){arena.path([p1,mouse_down_pos,p2,mouse_down_pos,mouse,mouse],width = .005,color = "rgb(255,255,255)")}
+	   			
+   			}
+   			else
+   			{
+   				launchVector = function(){}
+   			}
+   		});
+   
   $( "#game_world" ).mousedown(function( event ) {
     mouse = new vector([event.pageX,event.offsetY])
     mouse = mouse.subtract(arena.center)
@@ -213,11 +246,15 @@ function registerMouseEvents() {
     	ball.pos = snap(ball.pos,mouse_down_pos,new vector([0,-.5]))
     	ball.pos = snap(ball.pos,mouse_down_pos,new vector([.5,0]))
     	ball.pos = snap(ball.pos,mouse_down_pos,new vector([-.5,0]))
+    	mouse_down_pos = ball.pos
 	    ball.color_rgb_list = [Math.floor(Math.random()*360),Math.floor(Math.random()*255),Math.floor(Math.random()*255)]
 	    balls.push(ball)
 	    ball.render()
+	    mousedown = true
+	    
 
 	    $( "#game_world" ).on("touchend mouseup",function( event ) {
+	    	mousedown = false
 	    	event.preventDefault() 
 
 			mouse = new vector([event.pageX,event.offsetY])
@@ -242,6 +279,16 @@ function registerMouseEvents() {
 
 $("#showpath").click(function() {
 	window.requestAnimationFrame(renderStep);
+});
+
+$("#Clear").click(function() {
+	balls = []
+	arena.ctx.clearRect(0, 0, arena.canvas.width, arena.canvas.height);
+});
+
+$("#stopOnColide").click(function() {
+	balls = []
+	arena.ctx.clearRect(0, 0, arena.canvas.width, arena.canvas.height);
 });
 
 registerMouseEvents()
