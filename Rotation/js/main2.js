@@ -15,6 +15,7 @@ function arena_object(canvas){
 	this.motion_indicator_width = .3
 	this.dt = .1
 	this.indicator_radius = .95
+	this.t = 0
 
 	this.arc = function(start,stop, radius = 1, width = 1./50.,color = 'rgba(240,240,240,.4)')
 	{
@@ -42,11 +43,11 @@ function arena_object(canvas){
 	this.update = function()
 	{
 		this.theta+=this.perspective_omega*this.dt
+		this.t+=this.dt
 	}
 
 	this.render = function(){
 
-		this.update()
 
 		this.circle(zeroVector(2),this.radius)
 
@@ -88,11 +89,11 @@ function ball_object(arena){
 	this.update = function()
 	{
 		this.collision_check()
-		this.pos = this.pos.rotate(-2*arena.perspective_omega*arena.dt)
-		this.vel = this.vel.rotate(-2*arena.perspective_omega*arena.dt)
+		this.pos = this.pos.rotate(-arena.perspective_omega*arena.dt)
+		this.vel = this.vel.rotate(-arena.perspective_omega*arena.dt)
 		this.pos = this.pos.add(this.vel.scale(arena.dt))
-		this.hist.push(this.pos)
-		while (this.hist.length>5000/balls.length) {this.hist.shift()}
+		this.hist.push([...[this.pos,arena.theta,arena.t]])
+		while (this.hist.length>1000/balls.length) {this.hist.shift()}
 	}
 	
 	this.render = function()
@@ -100,21 +101,46 @@ function ball_object(arena){
 		
 		var color = "hsl("+this.color_rgb_list[0]+",40%,40%)"
 
-		arena.ctx.beginPath();
-		arena.ctx.strokeStyle = color;
-		arena.ctx.lineWidth = 2*this.render_radius*arena.scale;
-		arena.ctx.lineWidth = 2*this.render_radius*arena.scale*.1;
-		arena.ctx.lineJoin = "round";
-		for (var i = this.hist.length - 1; i >= 0; i--) {
-			pos = this.hist[i]
-			arena.ctx.lineWidth = 0;
-			arena.ctx.lineTo(pos.x*arena.scale+arena.center.x,arena.center.y-pos.y*arena.scale);
 
-			// arena.circle(pos,this.render_radius/10,color = "rgba(255,255,255,.5)")
+		if (document.getElementById("show_true_path").checked ) {
+
+			arena.ctx.beginPath();
+			arena.ctx.strokeStyle = color;
+			arena.ctx.lineWidth = 2*this.render_radius*arena.scale*.1;
+			arena.ctx.lineJoin = "round";
+			for (var i = this.hist.length - 1; i >= 0; i--) {
+				rec_omega = this.hist[i][1]
+
+
+				pos = this.hist[i][0].rotate(rec_omega-arena.theta)
+				arena.ctx.lineWidth = 0;
+				arena.ctx.lineTo(pos.x*arena.scale+arena.center.x,arena.center.y-pos.y*arena.scale);
+
+				// arena.circle(pos,this.render_radius/10,color = "rgba(255,255,255,.5)")
+			}
+
+			
+			arena.ctx.stroke();
 		}
 
+		if (document.getElementById("show_aparant_path").checked ) {
+			arena.ctx.beginPath();
+			var color = "hsl("+this.color_rgb_list[0]+",40%,60%)"
+			arena.ctx.strokeStyle = color;
+			for (var i = this.hist.length - 1; i >= 0; i--) {
+				rec_omega = this.hist[i][1]
 
-		arena.ctx.stroke();
+				pos = this.hist[i][0].rotate(rec_omega-arena.theta)
+				pos = pos.rotate(-arena.perspective_omega*(this.hist[i][2]-arena.t))
+				arena.ctx.lineWidth = 0;
+				arena.ctx.lineTo(pos.x*arena.scale+arena.center.x,arena.center.y-pos.y*arena.scale);
+
+				// arena.circle(pos,this.render_radius/10,color = "rgba(255,255,255,.5)")
+			}
+
+
+			arena.ctx.stroke();
+		}
 
 		var color = "hsl("+this.color_rgb_list[0]+",70%,70%)"
 		arena.circle(this.pos,this.render_radius,color = color)
@@ -136,8 +162,11 @@ function renderStep()
   // Clears the canvas for new visuals
   arena.ctx.clearRect(0, 0, arena.canvas.width, arena.canvas.height);
   
+
+  if (!document.getElementById("showpath").checked ) {
   // update the arena position
   arena.update()
+  }
 
   // render the arena
   arena.render()
@@ -145,7 +174,9 @@ function renderStep()
   // for each ball update its position and then render
   for (var i = balls.length - 1; i >= 0; i--) {
   	ball = balls[i]
+  	if (!document.getElementById("showpath").checked ) {
   	ball.update()
+  }
   	ball.render()
   }
   
@@ -154,9 +185,9 @@ function renderStep()
   arena.perspective_omega = refrenceRotation
   
   // if the user pauses dont call the next frame
-  if (!document.getElementById("showpath").checked ) {
+  
   window.requestAnimationFrame(renderStep);
-	}
+
 }
 
 // start the loop
@@ -195,7 +226,7 @@ function registerMouseEvents() {
 			mouse_up_pos = new vector([mouse.x,-mouse.y])
 
 			vel  = mouse_down_pos.subtract(mouse_up_pos).scale(.25)
-			console.log(vel)
+			// console.log(vel)
 			if (Math.abs(vel.norm().x)<.1) {vel = new vector([0,vel.y])}
 			if (Math.abs(vel.norm().y)<.1) {vel = new vector([vel.x,0])}
 			console.log(vel)

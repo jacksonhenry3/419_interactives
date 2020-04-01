@@ -21,12 +21,17 @@
 <body>
   
   <div id = "input_panel">
-    <span> Rotation of Refrence frame <input type="range" min="-.2" max=".2" value=".0"  step="0.01" class="slider" id="Refrence"></span>
+    <span> Rotation of Refrence frame <input type="range" min="-.2" max=".2" value=".0"  step="0.00001" class="slider" id="Refrence"></span>
     
   <!-- <input type="checkbox" class = "checkbox" id="refrenceRotation" name="vehicle1" value="Bike">
   <label for="vehicle1"> Show Refrence rotation</label><br> -->
-  <input type="checkbox" class = "checkbox" id="showpath" name="vehicle1" value="Bike">
-  <label for="vehicle1"> Pause</label><br>
+  <input type="checkbox" class = "checkbox" id="showpath" name="pause">
+  <label for="pause"> Pause</label><br>
+
+  <input type="checkbox" class = "checkbox" id="show_true_path" name="show_true_path">
+  <label for="show_true_path"> Show true path</label><br>
+  <input type="checkbox" class = "checkbox" id="show_aparant_path" name="show_aparant_path">
+  <label for="show_aparant_path"> Show aparant path</label><br>
   </div>
   <!-- Add your site or application content here -->
   <canvas id = "game_world"></canvas>
